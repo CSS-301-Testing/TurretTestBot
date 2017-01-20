@@ -40,11 +40,10 @@ public class Robot extends SampleRobot {
     final String defaultAuto = "Default";
     final String customAuto = "My Auto";
     SendableChooser chooser;
-
-    //startPos 0
-    //halfEndPos 13906
-    int upTicks = 13988;
-    int downTicks = -1202;
+    
+    
+    int upTicks = 13988; //RevLimitSwitch
+    int downTicks = -1202; //FwdLimitSwitch
     
     int upAngle = 180;
     int downAngle = 0;
@@ -55,6 +54,8 @@ public class Robot extends SampleRobot {
     
     int targetAngle = 90;
     
+    MiniPID pid;
+    
     public Robot() {
         myRobot = new RobotDrive(0, 1);
         myRobot.setExpiration(0.1);
@@ -62,6 +63,9 @@ public class Robot extends SampleRobot {
         turnClock = new JoystickButton(stick,1);
         turnCounterClock = new JoystickButton(stick,2);
         turretMotor = new CANTalon(4);
+        pid = new MiniPID(0.05,0,0);
+        pid.setOutputLimits(-1, 1);
+        pid.setDirection(true);
     }
     
     public void robotInit() {
@@ -113,13 +117,15 @@ public class Robot extends SampleRobot {
      */
     public void operatorControl() {
     	while(isOperatorControl()&&isEnabled()){
+    		//manualTurn();
     		if(!encPosSet){
     			homing();
     		}else{
     			myRobot.setSafetyEnabled(true);
-    			System.out.println(ticksToAngle(turretMotor.getEncPosition()));
-    			
-    	        //manualTurn();
+//    			System.out.println(ticksToAngle(turretMotor.getEncPosition()));
+//    			System.out.print(joystickToAngle(getJoystickAngle(stick)));
+    			double outPut = pid.getOutput(ticksToAngle(turretMotor.getEncPosition()), joystickToAngle(getJoystickAngle(stick)));
+    	    	System.out.println(outPut);
     	        autoTurn(joystickToAngle(getJoystickAngle(stick)));
     		}
     	}
@@ -179,11 +185,9 @@ public class Robot extends SampleRobot {
     //Starts at 0, motor should set to be positive
     public void autoTurn(double angle){
     	Timer.delay(0.005);
-    	if(Math.abs(angle - ticksToAngle(turretMotor.getEncPosition())) <=5){
-    		turretMotor.set(0);
-    	}else{
-    		turretMotor.set(0.2);
-    	}
+    	double outPut = pid.getOutput(ticksToAngle(turretMotor.getEncPosition()), angle);
+    	System.out.println(outPut);
+    	turretMotor.set(-outPut);
     }
     
 }
