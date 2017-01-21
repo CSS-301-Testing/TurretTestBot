@@ -42,8 +42,8 @@ public class Robot extends SampleRobot {
     SendableChooser chooser;
     
     
-    int upTicks = 13988; //RevLimitSwitch
-    int downTicks = -1202; //FwdLimitSwitch
+    int upTicks = 12339; //RevLimitSwitch
+    int downTicks = -2670; //FwdLimitSwitch
     
     int upAngle = 180;
     int downAngle = 0;
@@ -51,7 +51,8 @@ public class Robot extends SampleRobot {
     int downJoystick = -1;
     int upJoystick = 1;
     boolean encPosSet = false;
-    
+    boolean upTicksSet = false;
+    boolean downTicksSet = false;
     int targetAngle = 90;
     
     MiniPID pid;
@@ -117,15 +118,20 @@ public class Robot extends SampleRobot {
      */
     public void operatorControl() {
     	while(isOperatorControl()&&isEnabled()){
-    		//manualTurn();
+        	Timer.delay(0.005);
+
+//    		manualTurn();
     		if(!encPosSet){
-    			homing();
+    			twoWayHoming();
     		}else{
     			myRobot.setSafetyEnabled(true);
+    			System.out.println("upTicks: " + upTicks);
+    			System.out.println("downTicks: " + downTicks);
 //    			System.out.println(ticksToAngle(turretMotor.getEncPosition()));
 //    			System.out.print(joystickToAngle(getJoystickAngle(stick)));
-    			double outPut = pid.getOutput(ticksToAngle(turretMotor.getEncPosition()), joystickToAngle(getJoystickAngle(stick)));
-    	    	System.out.println(outPut);
+//    			double output = pid.getOutput(ticksToAngle(turretMotor.getEncPosition()), joystickToAngle(getJoystickAngle(stick)));
+//    	    	System.out.println(output);
+    			//manualTurn();
     	        autoTurn(joystickToAngle(getJoystickAngle(stick)));
     		}
     	}
@@ -161,8 +167,6 @@ public class Robot extends SampleRobot {
     
     public void manualTurn(){
     	System.out.println("encPos:" + turretMotor.getEncPosition());
-    	Timer.delay(0.005);// wait for a motor update time
-
         if(turnClock.get()){        	
         	turretMotor.set(0.2);
         }else if(turnCounterClock.get()){
@@ -173,8 +177,7 @@ public class Robot extends SampleRobot {
     }
     
     
-    public void homing(){
-    	Timer.delay(0.005);
+    public void oneWayHoming(){
     	turretMotor.set(-0.2); //Stop when run counter clockwise
     	if(turretMotor.isRevLimitSwitchClosed()){
     		turretMotor.setEncPosition(upTicks);
@@ -182,9 +185,28 @@ public class Robot extends SampleRobot {
     	}
     }
     
+    public void twoWayHoming(){
+    	if(!upTicksSet){
+    		turretMotor.set(-0.3); //Stop when run counter clockwise
+    		if(turretMotor.isRevLimitSwitchClosed()){
+    			upTicks = turretMotor.getEncPosition();
+    			upTicksSet = true;
+    			System.out.println("upTicksSet " + upTicks);
+    		}
+    	}else if(!downTicksSet){
+    		turretMotor.set(0.3);
+    		if(turretMotor.isFwdLimitSwitchClosed()){
+    			downTicks = turretMotor.getEncPosition();
+    			downTicksSet = true;
+    			System.out.println("downTicksSet " + downTicks);
+    		}
+    	}else if(upTicksSet&&downTicksSet){
+    		encPosSet = true;
+    	}
+    }
+    
     //Starts at 0, motor should set to be positive
     public void autoTurn(double angle){
-    	Timer.delay(0.005);
     	double outPut = pid.getOutput(ticksToAngle(turretMotor.getEncPosition()), angle);
     	System.out.println(outPut);
     	turretMotor.set(-outPut);
