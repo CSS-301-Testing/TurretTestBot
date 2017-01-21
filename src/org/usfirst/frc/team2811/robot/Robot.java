@@ -4,9 +4,14 @@ package org.usfirst.frc.team2811.robot;
 import edu.wpi.first.wpilibj.SampleRobot;
 import edu.wpi.first.wpilibj.RobotDrive;
 
+import java.io.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import com.ctre.CANTalon;
 
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.Preferences;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.buttons.Button;
 import edu.wpi.first.wpilibj.buttons.JoystickButton;
@@ -40,11 +45,14 @@ public class Robot extends SampleRobot {
     final String defaultAuto = "Default";
     final String customAuto = "My Auto";
     SendableChooser chooser;
+	Preferences prefs = Preferences.getInstance();;
+
     
-    
-    int upTicks = 12339; //RevLimitSwitch
-    int downTicks = -2670; //FwdLimitSwitch
-    
+//    int upTicks;// = 12339; //RevLimitSwitch
+//    int downTicks;// = -2670; //FwdLimitSwitch
+//    
+    int upTicks = prefs.getInt("upTicks", 12421);
+	int downTicks = prefs.getInt("downTicks", -2850);
     int upAngle = 180;
     int downAngle = 0;
     
@@ -56,6 +64,10 @@ public class Robot extends SampleRobot {
     int targetAngle = 90;
     
     MiniPID pid;
+    
+    String location = "/home/lvuser";
+    		
+    File dataFile;
     
     public Robot() {
         myRobot = new RobotDrive(0, 1);
@@ -74,11 +86,16 @@ public class Robot extends SampleRobot {
         chooser.addDefault("Default Auto", defaultAuto);
         chooser.addObject("My Auto", customAuto);
         SmartDashboard.putData("Auto modes", chooser);
+        
+        //Necessary steps for initializing a motor
         turretMotor.reset();
     	turretMotor.clearStickyFaults();
     	turretMotor.changeControlMode(CANTalon.TalonControlMode.PercentVbus);
     	turretMotor.enable();
     	turretMotor.set(0);
+    
+    	
+    	
     }
 
 	/**
@@ -119,18 +136,15 @@ public class Robot extends SampleRobot {
     public void operatorControl() {
     	while(isOperatorControl()&&isEnabled()){
         	Timer.delay(0.005);
-
+        	myRobot.setSafetyEnabled(true);
 //    		manualTurn();
+//    		autoTurn(joystickToAngle(getJoystickAngle(stick)));
+//    		System.out.println(turretMotor.getEncPosition());
     		if(!encPosSet){
-    			twoWayHoming();
+    			oneWayHoming();
     		}else{
-    			myRobot.setSafetyEnabled(true);
     			System.out.println("upTicks: " + upTicks);
     			System.out.println("downTicks: " + downTicks);
-//    			System.out.println(ticksToAngle(turretMotor.getEncPosition()));
-//    			System.out.print(joystickToAngle(getJoystickAngle(stick)));
-//    			double output = pid.getOutput(ticksToAngle(turretMotor.getEncPosition()), joystickToAngle(getJoystickAngle(stick)));
-//    	    	System.out.println(output);
     			//manualTurn();
     	        autoTurn(joystickToAngle(getJoystickAngle(stick)));
     		}
@@ -165,6 +179,7 @@ public class Robot extends SampleRobot {
 		return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 	}
     
+    //Turn the turret manually with button 1 and 2
     public void manualTurn(){
     	System.out.println("encPos:" + turretMotor.getEncPosition());
         if(turnClock.get()){        	
@@ -176,7 +191,7 @@ public class Robot extends SampleRobot {
         }
     }
     
-    
+    //Homing using only one limit switch
     public void oneWayHoming(){
     	turretMotor.set(-0.2); //Stop when run counter clockwise
     	if(turretMotor.isRevLimitSwitchClosed()){
@@ -185,6 +200,7 @@ public class Robot extends SampleRobot {
     	}
     }
     
+    //Homing using two limit switch
     public void twoWayHoming(){
     	if(!upTicksSet){
     		turretMotor.set(-0.3); //Stop when run counter clockwise
@@ -212,4 +228,5 @@ public class Robot extends SampleRobot {
     	turretMotor.set(-outPut);
     }
     
+
 }
