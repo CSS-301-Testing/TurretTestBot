@@ -45,30 +45,24 @@ public class Robot extends SampleRobot {
     final String defaultAuto = "Default";
     final String customAuto = "My Auto";
     SendableChooser chooser;
+    
+    //Access preference on the SmartDashboard
 	Preferences prefs = Preferences.getInstance();;
 
-    
-//    int upTicks;// = 12339; //RevLimitSwitch
-//    int downTicks;// = -2670; //FwdLimitSwitch
-//    
+	//Save data into preference
     int upTicks = prefs.getInt("upTicks", 12421);
 	int downTicks = prefs.getInt("downTicks", -2850);
     int upAngle = 180;
     int downAngle = 0;
-    
     int downJoystick = -1;
     int upJoystick = 1;
+    
     boolean encPosSet = false;
     boolean upTicksSet = false;
     boolean downTicksSet = false;
-    int targetAngle = 90;
     
     MiniPID pid;
-    
-    String location = "/home/lvuser";
-    		
-    File dataFile;
-    
+
     public Robot() {
         myRobot = new RobotDrive(0, 1);
         myRobot.setExpiration(0.1);
@@ -93,9 +87,6 @@ public class Robot extends SampleRobot {
     	turretMotor.changeControlMode(CANTalon.TalonControlMode.PercentVbus);
     	turretMotor.enable();
     	turretMotor.set(0);
-    
-    	
-    	
     }
 
 	/**
@@ -108,11 +99,9 @@ public class Robot extends SampleRobot {
 	 * If using the SendableChooser make sure to add them to the chooser code above as well.
 	 */
     public void autonomous() {
-    	
     	String autoSelected = (String) chooser.getSelected();
 //		String autoSelected = SmartDashboard.getString("Auto Selector", defaultAuto);
 		System.out.println("Auto selected: " + autoSelected);
-    	
     	switch(autoSelected) {
     	case customAuto:
             myRobot.setSafetyEnabled(false);
@@ -138,14 +127,11 @@ public class Robot extends SampleRobot {
         	Timer.delay(0.005);
         	myRobot.setSafetyEnabled(true);
 //    		manualTurn();
-//    		autoTurn(joystickToAngle(getJoystickAngle(stick)));
-//    		System.out.println(turretMotor.getEncPosition());
     		if(!encPosSet){
     			oneWayHoming();
     		}else{
     			System.out.println("upTicks: " + upTicks);
     			System.out.println("downTicks: " + downTicks);
-    			//manualTurn();
     	        autoTurn(joystickToAngle(getJoystickAngle(stick)));
     		}
     	}
